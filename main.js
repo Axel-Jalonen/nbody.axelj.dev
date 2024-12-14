@@ -84,34 +84,41 @@ class Point {
 const points = [];
 
 function render() {
-  const dt = 0.01; // Define a time step
-  const G = 6.6743e-11; // Gravitational constant (adjust as needed)
+  const dt = 0.5; // Time step
+  const G = 6.6743e-11; // Gravitational constant
+  const distanceScale = 4.5e9;
+  const massScale = 1.9e29;
 
+  // Force calculation loop
   for (let i = 0; i < points.length; i++) {
     for (let j = i + 1; j < points.length; j++) {
       const point1 = points[i];
       const point2 = points[j];
-      const dx = point2.x - point1.x;
-      const dy = point2.y - point1.y;
+      const dx = (point2.x - point1.x) * distanceScale;
+      const dy = (point2.y - point1.y) * distanceScale;
       const r = Math.sqrt(dx ** 2 + dy ** 2);
 
-      if (r === 0) continue; // Avoid division by zero
+      if (r === 0) continue;
 
-      const force = (G * point1.mass * point2.mass) / r ** 2;
+      const force =
+        (G * point1.mass * massScale * point2.mass * massScale) / r ** 2;
       const theta = Math.atan2(dy, dx);
       const fx = force * Math.cos(theta);
       const fy = force * Math.sin(theta);
 
       points[i].fx += fx;
       points[i].fy += fy;
-      points[j].fx -= fx; // Newton's third law
+      points[j].fx -= fx;
       points[j].fy -= fy;
     }
   }
 
+  // Update positions loop
   for (let i = 0; i < points.length; i++) {
-    points[i].x += (points[i].fx / points[i].mass) * dt;
-    points[i].y += (points[i].fy / points[i].mass) * dt;
+    points[i].x +=
+      (points[i].fx / (points[i].mass * massScale) / distanceScale) * dt;
+    points[i].y +=
+      (points[i].fy / (points[i].mass * massScale) / distanceScale) * dt;
 
     if (
       points[i].x > 1 ||
@@ -120,19 +127,19 @@ function render() {
       points[i].y < 0
     ) {
       points.splice(i, 1);
-      i--; // Adjust index after removal
+      i--;
     }
   }
 
   points.forEach((point) => {
     point.draw();
-    // console.log(point.x);
+    console.log(point.x + " ");
   });
 }
 
 document.addEventListener("click", (event) => {
   // Random number that is 100 times 1 over the inverse of the uniform between 0-1
-  let mass = 100 / Math.random();
+  let mass = 1 / Math.random();
   points.push(
     new Point(0, 0, ...screenToWorld(event.clientX, event.clientY), mass),
   );
