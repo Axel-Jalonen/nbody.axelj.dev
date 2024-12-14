@@ -76,7 +76,8 @@ class Point {
     if (this.x > 1 || this.x < 0 || this.y > 1 || this.y < 0) {
       return;
     }
-    drawCircle(this.x, this.y, 3);
+    const size = Math.log2(this.mass); // Size proportional to mass
+    drawCircle(this.x, this.y, size);
   }
 }
 
@@ -131,7 +132,7 @@ function render() {
 
 document.addEventListener("click", (event) => {
   // Random number that is 100 times 1 over the inverse of the uniform between 0-1
-  const mass = 100 / Math.random();
+  let mass = 100 / Math.random();
   points.push(
     new Point(0, 0, ...screenToWorld(event.clientX, event.clientY), mass),
   );
