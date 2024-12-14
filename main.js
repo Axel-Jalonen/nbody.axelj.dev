@@ -3,11 +3,20 @@ const ctx = canvas.getContext("2d");
 
 ctx.fillStyle = "black";
 
-const canvasWidth = window.innerWidth * 2;
-const canvasHeight = window.innerHeight * 2;
+let canvasWidth = window.innerWidth * 2;
+let canvasHeight = window.innerHeight * 2;
 
-canvas.width = canvasWidth;
-canvas.height = canvasHeight;
+function initCanvasSize() {
+  canvasWidth = window.innerWidth * 2;
+  canvasHeight = window.innerHeight * 2;
+
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
+}
+
+initCanvasSize();
+
+window.addEventListener("resize", initCanvasSize);
 
 ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
