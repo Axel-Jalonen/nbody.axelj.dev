@@ -30,6 +30,16 @@ function drawRect(x, y, sx, sy) {
   ctx.fillRect(...worldToScreen(x, y), sx, sy);
 }
 
+function drawCircle(x, y, r) {
+  ctx.beginPath();
+  ctx.arc(...worldToScreen(x, y), r, 0, 2 * Math.PI);
+  ctx.fillStyle = "white";
+  ctx.fill();
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = "white";
+  ctx.stroke();
+}
+
 class Point {
   x;
   y;
@@ -49,7 +59,7 @@ class Point {
     if (this.x > 1 || this.x < 0 || this.y > 1 || this.y < 0) {
       return;
     }
-    drawRect(this.x, this.y, 10, 10);
+    drawCircle(this.x, this.y, 3);
   }
 }
 
