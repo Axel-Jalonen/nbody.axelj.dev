@@ -111,17 +111,29 @@ function render() {
   for (let i = 0; i < points.length; i++) {
     points[i].x += (points[i].fx / points[i].mass) * dt;
     points[i].y += (points[i].fy / points[i].mass) * dt;
+
+    if (
+      points[i].x > 1 ||
+      points[i].x < 0 ||
+      points[i].y > 1 ||
+      points[i].y < 0
+    ) {
+      points.splice(i, 1);
+      i--; // Adjust index after removal
+    }
   }
 
   points.forEach((point) => {
     point.draw();
-    console.log(point.x);
+    // console.log(point.x);
   });
 }
 
 document.addEventListener("click", (event) => {
+  // Random number that is 100 times 1 over the inverse of the uniform between 0-1
+  const mass = 100 / Math.random();
   points.push(
-    new Point(0, 0, ...screenToWorld(event.clientX, event.clientY), 100),
+    new Point(0, 0, ...screenToWorld(event.clientX, event.clientY), mass),
   );
 });
 
