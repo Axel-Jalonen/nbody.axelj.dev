@@ -1,7 +1,15 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-ctx.fillStyle = "black";
+let backgroundColor = "black";
+let foreground = "white";
+
+window.addEventListener("keydown", (event) => {
+  if (event.key === "a") {
+    backgroundColor = backgroundColor === "black" ? "white" : "black";
+    foreground = foreground === "white" ? "black" : "white";
+  }
+});
 
 let canvasWidth = window.innerWidth * 2;
 let canvasHeight = window.innerHeight * 2;
@@ -42,10 +50,10 @@ function drawRect(x, y, sx, sy) {
 function drawCircle(x, y, r) {
   ctx.beginPath();
   ctx.arc(...worldToScreen(x, y), r, 0, 2 * Math.PI);
-  ctx.fillStyle = "white";
+  ctx.fillStyle = foreground;
   ctx.fill();
   ctx.lineWidth = 4;
-  ctx.strokeStyle = "white";
+  ctx.strokeStyle = foreground;
   ctx.stroke();
 }
 
@@ -118,9 +126,9 @@ document.addEventListener("click", (event) => {
 });
 
 function animate() {
-  ctx.fillStyle = "black";
+  ctx.fillStyle = backgroundColor;
   drawRect(0, 0, canvasWidth, canvasHeight);
-  ctx.fillStyle = "white";
+  ctx.fillStyle = foreground;
   render();
   window.requestAnimationFrame(animate);
 }
