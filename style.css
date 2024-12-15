@@ -39,8 +39,15 @@ body {
     border-radius: 0.25rem;
 }
 
+#instructions-mobile {
+    display: none;
+}
+
 @media (max-width: 600px) and (hover: none) and (pointer: coarse) {
-    #instructions {
+    #instructions-computer {
         display: none;
+    }
+    #instructions-mobile {
+        display: block;
     }
 }
