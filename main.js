@@ -74,7 +74,7 @@ function init() {
       createPoint();
     }
   });
-  window.addEventListener("touchstart", createPoint);
+  document.getElementById("add-body").addEventListener("click", createPoint);
 
   animate(controls);
 }
