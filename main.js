@@ -70,7 +70,7 @@ function init() {
   });
   window.addEventListener("resize", onWindowResize);
   window.addEventListener("keydown", (e) => {
-    if (e.key === "n") {
+    if (e.key === "n" || e.key === "N") {
       createPoint();
     }
   });
