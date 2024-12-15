@@ -1,0 +1,22 @@
+{
+  "name": "nbody.axelj.dev",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Axel-Jalonen/nbody.axelj.dev.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Axel-Jalonen/nbody.axelj.dev/issues"
+  },
+  "homepage": "https://github.com/Axel-Jalonen/nbody.axelj.dev#readme",
+  "dependencies": {
+    "three": "^0.171.0"
+  }
+}

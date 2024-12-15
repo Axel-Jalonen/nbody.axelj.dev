@@ -1,156 +1,161 @@
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
-let backgroundColor = "black";
-let foreground = "white";
+let scene, camera, renderer, points, backgroundColor, foreground;
+let width;
+let height;
+let aspectRatio;
 
-window.addEventListener("keydown", (event) => {
-  if (event.key === "a") {
-    backgroundColor = backgroundColor === "black" ? "white" : "black";
-    foreground = foreground === "white" ? "black" : "white";
-  }
-});
+const BOX_SIZE = 20;
+const SPAWN_AREA_SIZE = 5;
+let DELTA_TIME = 0.001;
 
-let canvasWidth = window.innerWidth * 2;
-let canvasHeight = window.innerHeight * 2;
-
-function initCanvasSize() {
-  canvasWidth = window.innerWidth * 2;
-  canvasHeight = window.innerHeight * 2;
-
-  canvas.width = canvasWidth;
-  canvas.height = canvasHeight;
+function calculateScreenSpaceVars() {
+  width = window.innerWidth;
+  height = window.innerHeight;
+  aspectRatio = width / height;
 }
 
-initCanvasSize();
+function init() {
+  calculateScreenSpaceVars();
+  // Scene setup
+  scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0xff0000, 0.01, 15);
+  foreground = 0x000000; // Black points
+  scene.background = new THREE.Color(0x00000);
 
-window.addEventListener("resize", initCanvasSize);
+  // Add grid
+  const createGridHelper = (
+    size,
+    divisions,
+    color,
+    xRotation = 0,
+    yTranslation = 0,
+    zRotation = 0,
+  ) => {
+    const grid = new THREE.GridHelper(size, divisions, color, color);
+    grid.rotation.x = xRotation;
+    grid.rotation.z = zRotation;
+    grid.translateY(yTranslation);
+    return grid;
+  };
 
-ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-// Accepts 0 <= x, y <= 1
-function worldToScreen(x, y) {
-  if (x > 1 || y > 1) {
-    throw new Error("x and y must be between 0 and 1");
-  }
-  return [x * canvasWidth, y * canvasHeight];
-}
-
-function screenToWorld(x, y) {
-  if (x > canvasWidth || y > canvasHeight) {
-    throw new Error("x and y must be between 0 and canvas width/height");
-  }
-  return [(x / canvasWidth) * 2, (y / canvasHeight) * 2];
-}
-
-function drawRect(x, y, sx, sy) {
-  ctx.fillRect(...worldToScreen(x, y), sx, sy);
-}
-
-function drawCircle(x, y, r) {
-  ctx.beginPath();
-  ctx.arc(...worldToScreen(x, y), r, 0, 2 * Math.PI);
-  ctx.fillStyle = foreground;
-  ctx.fill();
-  ctx.lineWidth = 4;
-  ctx.strokeStyle = foreground;
-  ctx.stroke();
-}
-
-class Point {
-  x;
-  y;
-  fx;
-  fy;
-  mass;
-
-  constructor(fx, fy, x, y, mass) {
-    this.fx = fx;
-    this.fy = fy;
-    this.x = x;
-    this.y = y;
-    this.mass = mass;
-  }
-
-  draw() {
-    if (this.x > 1 || this.x < 0 || this.y > 1 || this.y < 0) {
-      return;
-    }
-    const size = Math.log2(this.mass); // Size proportional to mass
-    drawCircle(this.x, this.y, size);
-  }
-}
-
-const points = [];
-
-function render() {
-  const dt = 0.5; // Time step
-  const G = 6.6743e-11; // Gravitational constant
-  const distanceScale = 4.5e9;
-  const massScale = 1.9e29;
-
-  // Force calculation loop
-  for (let i = 0; i < points.length; i++) {
-    for (let j = i + 1; j < points.length; j++) {
-      const point1 = points[i];
-      const point2 = points[j];
-      const dx = (point2.x - point1.x) * distanceScale;
-      const dy = (point2.y - point1.y) * distanceScale;
-      const r = Math.sqrt(dx ** 2 + dy ** 2);
-
-      if (r === 0) continue;
-
-      const force =
-        (G * point1.mass * massScale * point2.mass * massScale) / r ** 2;
-      const theta = Math.atan2(dy, dx);
-      const fx = force * Math.cos(theta);
-      const fy = force * Math.sin(theta);
-
-      points[i].fx += fx;
-      points[i].fy += fy;
-      points[j].fx -= fx;
-      points[j].fy -= fy;
-    }
-  }
-
-  // Update positions loop
-  for (let i = 0; i < points.length; i++) {
-    points[i].x +=
-      (points[i].fx / (points[i].mass * massScale) / distanceScale) * dt;
-    points[i].y +=
-      (points[i].fy / (points[i].mass * massScale) / distanceScale) * dt;
-
-    if (
-      points[i].x > 1 ||
-      points[i].x < 0 ||
-      points[i].y > 1 ||
-      points[i].y < 0
-    ) {
-      points.splice(i, 1);
-      i--;
-    }
-  }
-
-  points.forEach((point) => {
-    point.draw();
-    console.log(point.x + " ");
-  });
-}
-
-document.addEventListener("click", (event) => {
-  // Random number that is 100 times 1 over the inverse of the uniform between 0-1
-  let mass = 1 / Math.random();
-  points.push(
-    new Point(0, 0, ...screenToWorld(event.clientX, event.clientY), mass),
+  scene.add(createGridHelper(BOX_SIZE, 10, 0x808080, Math.PI / 2, 10));
+  scene.add(
+    createGridHelper(BOX_SIZE, 10, 0x808080, Math.PI / 2, 10, Math.PI / 2),
   );
-});
+  scene.add(createGridHelper(BOX_SIZE, 10, 0x808080, 0, -10));
 
-function animate() {
-  ctx.fillStyle = backgroundColor;
-  drawRect(0, 0, canvasWidth, canvasHeight);
-  ctx.fillStyle = foreground;
-  render();
-  window.requestAnimationFrame(animate);
+  // Camera setup
+  camera = new THREE.PerspectiveCamera(70, aspectRatio, 0.1, 1000);
+  // Middle of box
+  camera.position.z = 10;
+
+  // Renderer setup
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  // Add OrbitControls
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.minDistance = 1; // Set minimum zoom distance
+  controls.maxDistance = 500; // Set maximum zoom distance
+
+  // Points array
+  points = [];
+
+  // Event listeners
+  document.getElementById("dt").addEventListener("input", () => {
+    DELTA_TIME = parseFloat(document.getElementById("dt").value);
+  });
+  window.addEventListener("resize", onWindowResize);
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "n") {
+      createPoint();
+    }
+  });
+
+  animate(controls);
 }
 
-animate();
+function onWindowResize() {
+  calculateScreenSpaceVars();
+  camera.aspect = aspectRatio;
+  camera.updateProjectionMatrix();
+  renderer.setSize(width, height);
+}
+
+function createPoint() {
+  const mass = Math.random() * 10 + 1; // Random mass between 1 and 11
+  const geometry = new THREE.SphereGeometry(Math.log2(mass) / 50, 32, 32); // Ensure minimum size
+  const material = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    emissive: 0xffffff,
+    metalness: 1,
+    emissiveIntensity: 5,
+    roughness: 0.01,
+  });
+  const sphere = new THREE.Mesh(geometry, material);
+  sphere.position.set(
+    (Math.random() - 0.5) * SPAWN_AREA_SIZE, // Random x position within the box
+    (Math.random() - 0.5) * SPAWN_AREA_SIZE, // Random y position within the box
+    (Math.random() - 0.5) * SPAWN_AREA_SIZE, // Random z position within the box
+  );
+
+  const velocity = new THREE.Vector3(
+    (Math.random() - 0.5) * 0.01, // Small random velocity in X
+    (Math.random() - 0.5) * 0.01, // Small random velocity in Y
+    (Math.random() - 0.5) * 0.01, // Small random velocity in Z
+  );
+
+  points.push({ sphere, mass, velocity });
+  scene.add(sphere);
+}
+
+function calculateForces() {
+  const gravitationalConstant = 6.6743e-2; // Adjusted for visualization
+  const distanceScale = 1; // Simplify scale for intuitive distances
+
+  for (let i = 0; i < points.length; i++) {
+    const point1 = points[i];
+    point1.force = new THREE.Vector3(0, 0, 0);
+
+    for (let j = 0; j < points.length; j++) {
+      if (i === j) continue;
+
+      const point2 = points[j];
+      const dx = point2.sphere.position.x - point1.sphere.position.x;
+      const dy = point2.sphere.position.y - point1.sphere.position.y;
+      const dz = point2.sphere.position.z - point1.sphere.position.z;
+      const distance = Math.sqrt(dx ** 2 + dy ** 2 + dz ** 2) * distanceScale;
+
+      if (distance === 0) continue;
+
+      const forceMagnitude =
+        (gravitationalConstant * point1.mass * point2.mass) / distance ** 2;
+      const forceVector = new THREE.Vector3(dx, dy, dz)
+        .normalize()
+        .multiplyScalar(forceMagnitude);
+
+      point1.force.add(forceVector);
+    }
+  }
+
+  for (let point of points) {
+    const acceleration = point.force.divideScalar(point.mass);
+    point.velocity.add(acceleration.multiplyScalar(DELTA_TIME));
+    point.sphere.position.add(
+      point.velocity.clone().multiplyScalar(DELTA_TIME),
+    );
+  }
+}
+
+function animate(controls) {
+  requestAnimationFrame(() => animate(controls));
+
+  controls.update();
+  calculateForces();
+  renderer.render(scene, camera);
+}
+
+init();
