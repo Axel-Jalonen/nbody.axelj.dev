@@ -15,7 +15,7 @@ body {
 
 #instructions {
     font-family: monospace;
-    padding: 1rem 1rem;
+    /* padding: 1rem 1rem; */
     border-radius: 0.25rem;
     position: absolute;
     top: 1rem;
@@ -23,7 +23,14 @@ body {
     transform: translateX(-50%);
     text-transform: uppercase;
     background: #eee;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     /* background: blue; */
+}
+
+.instruction {
+    margin: 1rem 1rem 0.5rem;
 }
 
 .key {
