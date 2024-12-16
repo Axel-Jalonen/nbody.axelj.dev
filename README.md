@@ -1,5 +1,6 @@
 # N-BODY
 
-## "Building"
-`npm install` to install dependencies
-`npx vite` to start the dev server
+## Information
+`npm i` to install dependencies
+`npm run build` to build the project
+`npm run dev` to run the project in development mode
