@@ -1,18 +1,10 @@
 import * as THREE from "three";
+import * as CONFIG from "./config.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
 let scene, threeCamera, threeRenderer, width, height, ar;
 let points = [];
 let dt = 0.001;
-
-const BOX_SIZE = 20;
-const SPAWN_AREA_SIZE = BOX_SIZE / 2;
-const SPHERE_RESOLUTION = 8;
-const INITIAL_VELOCITY = 0.01;
-const FOV = 70;
-const GRID_COLOR = 0x808080;
-const GRID_DIVISIONS = 10;
-const SPHERE_EMISSIONS_COLOR = 0xffffff;
 
 function calculateScreenSpace() {
   width = window.innerWidth;
@@ -30,8 +22,8 @@ function init() {
 
   addGridToScene(scene);
 
-  threeCamera = new THREE.PerspectiveCamera(FOV, ar, 0.1, 1000);
-  threeCamera.position.z = BOX_SIZE / 2;
+  threeCamera = new THREE.PerspectiveCamera(CONFIG.CAMERA_FOV, ar, 0.1, 1000);
+  threeCamera.position.z = CONFIG.BOX_SIZE / 2;
 
   threeRenderer = new THREE.WebGLRenderer({ antialias: true });
   threeRenderer.setSize(width, height);
@@ -72,19 +64,19 @@ function addGridToScene(scene) {
   const halfPi = Math.PI / 2;
   function createGridHelper(xRot = 0, yTrans = 0, zRot = 0) {
     const g = new THREE.GridHelper(
-      BOX_SIZE,
-      GRID_DIVISIONS,
-      GRID_COLOR,
-      GRID_COLOR,
+      CONFIG.BOX_SIZE,
+      CONFIG.GRID_DIVISIONS,
+      CONFIG.GRID_COLOR,
+      CONFIG.GRID_COLOR,
     );
     g.rotation.x = xRot;
     g.rotation.z = zRot;
     g.translateY(yTrans);
     return g;
   }
-  scene.add(createGridHelper(halfPi, GRID_DIVISIONS));
-  scene.add(createGridHelper(halfPi, GRID_DIVISIONS, halfPi));
-  scene.add(createGridHelper(0, -GRID_DIVISIONS));
+  scene.add(createGridHelper(halfPi, CONFIG.GRID_DIVISIONS));
+  scene.add(createGridHelper(halfPi, CONFIG.GRID_DIVISIONS, halfPi));
+  scene.add(createGridHelper(0, -CONFIG.GRID_DIVISIONS));
 }
 
 function onWindowResize() {
@@ -102,22 +94,22 @@ function createSphere() {
     new THREE.SphereGeometry(
       // TODO: This is just a magic number, fix this with a proper formula
       Math.log2(sphereMass) / 30,
-      SPHERE_RESOLUTION,
-      SPHERE_RESOLUTION,
+      CONFIG.SPHERE_RESOLUTION,
+      CONFIG.SPHERE_RESOLUTION,
     ),
-    new THREE.MeshStandardMaterial({ emissive: SPHERE_EMISSIONS_COLOR }),
+    new THREE.MeshStandardMaterial({ emissive: CONFIG.SPHERE_EMISSION_COLOR }),
   );
 
   sphere.position.set(
-    (Math.random() - 0.5) * SPAWN_AREA_SIZE,
-    (Math.random() - 0.5) * SPAWN_AREA_SIZE,
-    (Math.random() - 0.5) * SPAWN_AREA_SIZE,
+    (Math.random() - 0.5) * CONFIG.SPAWN_AREA_SIZE,
+    (Math.random() - 0.5) * CONFIG.SPAWN_AREA_SIZE,
+    (Math.random() - 0.5) * CONFIG.SPAWN_AREA_SIZE,
   );
 
   const velocity = new THREE.Vector3(
-    (Math.random() - 0.5) * INITIAL_VELOCITY,
-    (Math.random() - 0.5) * INITIAL_VELOCITY,
-    (Math.random() - 0.5) * INITIAL_VELOCITY,
+    (Math.random() - 0.5) * CONFIG.INITIAL_VELOCITY,
+    (Math.random() - 0.5) * CONFIG.INITIAL_VELOCITY,
+    (Math.random() - 0.5) * CONFIG.INITIAL_VELOCITY,
   );
 
   points.push({ sphere, mass: sphereMass, velocity });
@@ -127,7 +119,7 @@ function createSphere() {
 function calculateForces() {
   const G = 6.6743e-11;
   // TODO: Fix scaling
-  const DISTANCE_SCALE = 1 / BOX_SIZE;
+  const DISTANCE_SCALE = 1 / CONFIG.BOX_SIZE;
 
   for (let i = 0; i < points.length; i++) {
     const p1 = points[i];
@@ -153,6 +145,7 @@ function calculateForces() {
         .normalize()
         .multiplyScalar(forceMagnitude);
 
+      // This will result in world space force
       p1.force.add(forceVector);
     }
   }
