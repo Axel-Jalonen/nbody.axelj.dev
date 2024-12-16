@@ -1,0 +1,10 @@
+export const BOX_SIZE: number = 20;
+export const SPAWN_AREA_SIZE: number = BOX_SIZE / 2;
+export const SPHERE_RESOLUTION: number = 8;
+export const INITIAL_VELOCITY: number = 0.01;
+export const CAMERA_FOV: number = 70;
+export const GRID_COLOR: number = 0x808080;
+export const GRID_DIVISIONS: number = 10;
+export const SPHERE_EMISSION_COLOR: number = 0xffffff;
+export const MAX_SPHERE_COUNT: number = 100;
+export const FLOATS_PER_SPHERE: number = 7;
