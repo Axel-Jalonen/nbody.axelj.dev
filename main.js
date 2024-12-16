@@ -1,153 +1,166 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
-let scene, camera, renderer, points, backgroundColor, foreground;
-let width;
-let height;
-let aspectRatio;
+let scene, threeCamera, threeRenderer, width, height, ar;
+let points = [];
+let dt = 0.001;
 
 const BOX_SIZE = 20;
-const SPAWN_AREA_SIZE = 5;
-let DELTA_TIME = 0.001;
+const SPAWN_AREA_SIZE = BOX_SIZE / 2;
+const SPHERE_RESOLUTION = 8;
+const INITIAL_VELOCITY = 0.01;
+const FOV = 70;
+const GRID_COLOR = 0x808080;
+const GRID_DIVISIONS = 10;
+const SPHERE_EMISSIONS_COLOR = 0xffffff;
 
-function calculateScreenSpaceVars() {
+function calculateScreenSpace() {
   width = window.innerWidth;
   height = window.innerHeight;
-  aspectRatio = width / height;
+  ar = width / height;
 }
 
 function init() {
-  calculateScreenSpaceVars();
-  // Scene setup
+  calculateScreenSpace();
+
   scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0xff0000, 0.01, 15);
-  foreground = 0x000000; // Black points
+
   scene.background = new THREE.Color(0x00000);
+  scene.fog = new THREE.Fog(0xff0000, 0.01, 15);
 
-  // Add grid
-  const createGridHelper = (
-    size,
-    divisions,
-    color,
-    xRotation = 0,
-    yTranslation = 0,
-    zRotation = 0,
-  ) => {
-    const grid = new THREE.GridHelper(size, divisions, color, color);
-    grid.rotation.x = xRotation;
-    grid.rotation.z = zRotation;
-    grid.translateY(yTranslation);
-    return grid;
-  };
+  addGridToScene(scene);
 
-  scene.add(createGridHelper(BOX_SIZE, 10, 0x808080, Math.PI / 2, 10));
-  scene.add(
-    createGridHelper(BOX_SIZE, 10, 0x808080, Math.PI / 2, 10, Math.PI / 2),
+  threeCamera = new THREE.PerspectiveCamera(FOV, ar, 0.1, 1000);
+  threeCamera.position.z = BOX_SIZE / 2;
+
+  threeRenderer = new THREE.WebGLRenderer({ antialias: true });
+  threeRenderer.setSize(width, height);
+
+  document.body.appendChild(threeRenderer.domElement);
+
+  const threeControls = new OrbitControls(
+    threeCamera,
+    threeRenderer.domElement,
   );
-  scene.add(createGridHelper(BOX_SIZE, 10, 0x808080, 0, -10));
 
-  // Camera setup
-  camera = new THREE.PerspectiveCamera(70, aspectRatio, 0.1, 1000);
-  // Middle of box
-  camera.position.z = 10;
+  // Zoom parameters
+  threeControls.minDistance = 1;
+  threeControls.maxDistance = 500;
 
-  // Renderer setup
-  renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  document.body.appendChild(renderer.domElement);
+  initializeEventListeners();
 
-  // Add OrbitControls
-  const controls = new OrbitControls(camera, renderer.domElement);
-  controls.minDistance = 1; // Set minimum zoom distance
-  controls.maxDistance = 500; // Set maximum zoom distance
+  animate(threeControls);
+}
 
-  // Points array
-  points = [];
-
-  // Event listeners
-  document.getElementById("dt").addEventListener("input", () => {
-    DELTA_TIME = parseFloat(document.getElementById("dt").value);
+function initializeEventListeners() {
+  document.getElementById("dt").addEventListener("input", (event) => {
+    dt = parseFloat(event.target.value);
   });
+
   window.addEventListener("resize", onWindowResize);
-  window.addEventListener("keydown", (e) => {
-    if (e.key === "n" || e.key === "N") {
-      createPoint();
+
+  window.addEventListener("keydown", (event) => {
+    if (event.key.toLowerCase() === "n") {
+      createSphere();
     }
   });
-  document.getElementById("add-body").addEventListener("click", createPoint);
 
-  animate(controls);
+  document.getElementById("add-body").addEventListener("click", createSphere);
+}
+
+function addGridToScene(scene) {
+  const halfPi = Math.PI / 2;
+  function createGridHelper(xRot = 0, yTrans = 0, zRot = 0) {
+    const g = new THREE.GridHelper(
+      BOX_SIZE,
+      GRID_DIVISIONS,
+      GRID_COLOR,
+      GRID_COLOR,
+    );
+    g.rotation.x = xRot;
+    g.rotation.z = zRot;
+    g.translateY(yTrans);
+    return g;
+  }
+  scene.add(createGridHelper(halfPi, GRID_DIVISIONS));
+  scene.add(createGridHelper(halfPi, GRID_DIVISIONS, halfPi));
+  scene.add(createGridHelper(0, -GRID_DIVISIONS));
 }
 
 function onWindowResize() {
-  calculateScreenSpaceVars();
-  camera.aspect = aspectRatio;
-  camera.updateProjectionMatrix();
-  renderer.setSize(width, height);
+  calculateScreenSpace();
+  threeCamera.aspect = ar;
+  threeCamera.updateProjectionMatrix();
+  threeRenderer.setSize(width, height);
 }
 
-function createPoint() {
-  const mass = Math.random() * 10 + 1; // Random mass between 1 and 11
-  const geometry = new THREE.SphereGeometry(Math.log2(mass) / 50, 32, 32); // Ensure minimum size
-  const material = new THREE.MeshStandardMaterial({
-    color: 0xffffff,
-    emissive: 0xffffff,
-    metalness: 1,
-    emissiveIntensity: 5,
-    roughness: 0.01,
-  });
-  const sphere = new THREE.Mesh(geometry, material);
+function createSphere() {
+  // TODO: Figure out mass scaling
+  const sphereMass = 1 / Math.random();
+
+  const sphere = new THREE.Mesh(
+    new THREE.SphereGeometry(
+      // TODO: This is just a magic number, fix this with a proper formula
+      Math.log2(sphereMass) / 30,
+      SPHERE_RESOLUTION,
+      SPHERE_RESOLUTION,
+    ),
+    new THREE.MeshStandardMaterial({ emissive: SPHERE_EMISSIONS_COLOR }),
+  );
+
   sphere.position.set(
-    (Math.random() - 0.5) * SPAWN_AREA_SIZE, // Random x position within the box
-    (Math.random() - 0.5) * SPAWN_AREA_SIZE, // Random y position within the box
-    (Math.random() - 0.5) * SPAWN_AREA_SIZE, // Random z position within the box
+    (Math.random() - 0.5) * SPAWN_AREA_SIZE,
+    (Math.random() - 0.5) * SPAWN_AREA_SIZE,
+    (Math.random() - 0.5) * SPAWN_AREA_SIZE,
   );
 
   const velocity = new THREE.Vector3(
-    (Math.random() - 0.5) * 0.01, // Small random velocity in X
-    (Math.random() - 0.5) * 0.01, // Small random velocity in Y
-    (Math.random() - 0.5) * 0.01, // Small random velocity in Z
+    (Math.random() - 0.5) * INITIAL_VELOCITY,
+    (Math.random() - 0.5) * INITIAL_VELOCITY,
+    (Math.random() - 0.5) * INITIAL_VELOCITY,
   );
 
-  points.push({ sphere, mass, velocity });
+  points.push({ sphere, mass: sphereMass, velocity });
   scene.add(sphere);
 }
 
 function calculateForces() {
-  const gravitationalConstant = 6.6743e-2; // Adjusted for visualization
-  const distanceScale = 1; // Simplify scale for intuitive distances
+  const G = 6.6743e-11;
+  // TODO: Fix scaling
+  const DISTANCE_SCALE = 1 / BOX_SIZE;
 
   for (let i = 0; i < points.length; i++) {
-    const point1 = points[i];
-    point1.force = new THREE.Vector3(0, 0, 0);
+    const p1 = points[i];
+    p1.force = new THREE.Vector3(0, 0, 0);
 
     for (let j = 0; j < points.length; j++) {
       if (i === j) continue;
 
-      const point2 = points[j];
-      const dx = point2.sphere.position.x - point1.sphere.position.x;
-      const dy = point2.sphere.position.y - point1.sphere.position.y;
-      const dz = point2.sphere.position.z - point1.sphere.position.z;
-      const distance = Math.sqrt(dx ** 2 + dy ** 2 + dz ** 2) * distanceScale;
+      const p2 = points[j];
 
-      if (distance === 0) continue;
+      const dx = (p2.sphere.position.x - p1.sphere.position.x) * DISTANCE_SCALE;
+      const dy = (p2.sphere.position.y - p1.sphere.position.y) * DISTANCE_SCALE;
+      const dz = (p2.sphere.position.z - p1.sphere.position.z) * DISTANCE_SCALE;
 
-      const forceMagnitude =
-        (gravitationalConstant * point1.mass * point2.mass) / distance ** 2;
+      const dist = Math.sqrt(dx ** 2 + dy ** 2 + dz ** 2);
+
+      if (dist === 0) continue;
+
+      // TODO: Fix scaling (mass)
+      const forceMagnitude = (G * p1.mass * p2.mass) / dist ** 2;
+
       const forceVector = new THREE.Vector3(dx, dy, dz)
         .normalize()
         .multiplyScalar(forceMagnitude);
 
-      point1.force.add(forceVector);
+      p1.force.add(forceVector);
     }
   }
 
   for (let point of points) {
     const acceleration = point.force.divideScalar(point.mass);
-    point.velocity.add(acceleration.multiplyScalar(DELTA_TIME));
-    point.sphere.position.add(
-      point.velocity.clone().multiplyScalar(DELTA_TIME),
-    );
+    point.velocity.add(acceleration.multiplyScalar(dt));
+    point.sphere.position.add(point.velocity.clone().multiplyScalar(dt));
   }
 }
 
@@ -156,7 +169,7 @@ function animate(controls) {
 
   controls.update();
   calculateForces();
-  renderer.render(scene, camera);
+  threeRenderer.render(scene, threeCamera);
 }
 
 init();
