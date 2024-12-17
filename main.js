@@ -20,7 +20,7 @@ function init() {
   calculateScreenSpaceVars();
   // Scene setup
   scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0xff0000, 0.01, 15);
+  // scene.fog = new THREE.Fog(0xff0000, 0.01, 15);
   foreground = 0x000000; // Black points
   scene.background = new THREE.Color(0x00000);
 
@@ -40,11 +40,13 @@ function init() {
     return grid;
   };
 
-  scene.add(createGridHelper(BOX_SIZE, 10, 0x808080, Math.PI / 2, 10));
+  const GRID_COLOR = 0x005500;
+
+  scene.add(createGridHelper(BOX_SIZE, 10, GRID_COLOR, Math.PI / 2, 10));
   scene.add(
-    createGridHelper(BOX_SIZE, 10, 0x808080, Math.PI / 2, 10, Math.PI / 2),
+    createGridHelper(BOX_SIZE, 10, GRID_COLOR, Math.PI / 2, 10, Math.PI / 2),
   );
-  scene.add(createGridHelper(BOX_SIZE, 10, 0x808080, 0, -10));
+  scene.add(createGridHelper(BOX_SIZE, 10, GRID_COLOR, 0, -10));
 
   // Camera setup
   camera = new THREE.PerspectiveCamera(70, aspectRatio, 0.1, 1000);
@@ -88,7 +90,7 @@ function onWindowResize() {
 
 function createPoint() {
   const mass = Math.random() * 10 + 1; // Random mass between 1 and 11
-  const geometry = new THREE.SphereGeometry(Math.log2(mass) / 50, 32, 32); // Ensure minimum size
+  const geometry = new THREE.SphereGeometry(Math.log2(mass) / 20, 32, 32); // Ensure minimum size
   const material = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     emissive: 0xffffff,
